@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Imported Items</title>
+  </head>
+  <body>
+    <h1>Imported Items</h1>
+
+    {% if items %}
+      {% for item in items %}
+        <div style="border:1px solid #ccc; padding:12px; margin:12px 0;">
+          <p><strong>ID:</strong> {{ item.id }}</p>
+          <p><strong>Source URL:</strong> {{ item.source_url }}</p>
+          <p><strong>Title:</strong> {{ item.title }}</p>
+          <p><strong>Price:</strong> {{ item.price }}</p>
+          <p><strong>Size:</strong> {{ item.size }}</p>
+          <p><strong>Condition:</strong> {{ item.condition }}</p>
+          <p><strong>Description:</strong> {{ item.description_notes }}</p>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p>No items found.</p>
+    {% endif %}
+
+    <p><a href="/">Back</a></p>
+  </body>
+</html>

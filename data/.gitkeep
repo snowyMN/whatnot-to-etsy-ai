@@ -1,0 +1,2 @@
+# Keep the data directory in version control.
+# SQLite files are ignored by .gitignore and created at runtime.
