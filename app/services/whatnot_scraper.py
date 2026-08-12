@@ -1,13 +1,7 @@
-from bs4 import BeautifulSoup
-from urllib.parse import urljoin
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 import time
-
-HEADERS = {
-    "User-Agent": "Mozilla/5.0"
-}
 
 def build_driver():
     options = Options()

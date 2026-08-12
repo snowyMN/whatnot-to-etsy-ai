@@ -1,0 +1,39 @@
+{
+  "meta": {
+    "app_placeholders": {
+      "source_image_node": "1",
+      "source_image_input_key": "image",
+      "prompt_node": "2",
+      "prompt_input_key": "text",
+      "width_node": "3",
+      "width_input_key": "value",
+      "height_node": "4",
+      "height_input_key": "value"
+    },
+    "note": "Replace this template with your actual ComfyUI FLUX workflow while keeping app_placeholders intact."
+  },
+  "1": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": ""
+    }
+  },
+  "2": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": ""
+    }
+  },
+  "3": {
+    "class_type": "PrimitiveNode",
+    "inputs": {
+      "value": 1024
+    }
+  },
+  "4": {
+    "class_type": "PrimitiveNode",
+    "inputs": {
+      "value": 1024
+    }
+  }
+}

@@ -3,26 +3,221 @@
   <head>
     <meta charset="UTF-8" />
     <title>Imported Items</title>
+    <link rel="stylesheet" href="/static/styles.css" />
   </head>
-  <body>
-    <h1>Imported Items</h1>
+  <body class="items-page">
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">Resale Review Workspace</p>
+        <h1>Imported Items</h1>
+      </div>
+      <p><a class="link-button" href="/">Back to import</a></p>
+    </header>
 
     {% if items %}
       {% for item in items %}
-        <div style="border:1px solid #ccc; padding:12px; margin:12px 0;">
-          <p><strong>ID:</strong> {{ item.id }}</p>
-          <p><strong>Source URL:</strong> {{ item.source_url }}</p>
-          <p><strong>Title:</strong> {{ item.title }}</p>
-          <p><strong>Price:</strong> {{ item.price }}</p>
-          <p><strong>Size:</strong> {{ item.size }}</p>
-          <p><strong>Condition:</strong> {{ item.condition }}</p>
-          <p><strong>Description:</strong> {{ item.description_notes }}</p>
-        </div>
+        <section class="item-shell" data-item-id="{{ item.id }}">
+          <div class="item-shell__header">
+            <div>
+              <p class="item-shell__meta">Item #{{ item.id }}</p>
+              <h2>{{ item.title or "Untitled import" }}</h2>
+            </div>
+            <div class="status-group">
+              <span class="status-badge status-{{ item.listing_status|lower|replace('_', '-') }}">{{ item.listing_status }}</span>
+              {% if item.approved_by %}
+                <span class="approved-meta">Approved by {{ item.approved_by }}</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="item-grid">
+            <article class="panel">
+              <h3>Original Listing</h3>
+              <dl class="meta-grid">
+                <div><dt>Source URL</dt><dd><a href="{{ item.source_url }}" target="_blank" rel="noreferrer">Open Whatnot listing</a></dd></div>
+                <div><dt>Price</dt><dd>{{ item.price or "Unknown" }}</dd></div>
+                <div><dt>Size</dt><dd>{{ item.size or "Unknown" }}</dd></div>
+                <div><dt>Condition</dt><dd>{{ item.condition or "Unknown" }}</dd></div>
+              </dl>
+              <div class="text-block">
+                <h4>Description Notes</h4>
+                <p>{{ item.description_notes or "No description captured." }}</p>
+              </div>
+              {% if item.review_notes %}
+                <div class="alert alert-warning">
+                  <strong>Source review note:</strong>
+                  <p>{{ item.review_notes }}</p>
+                </div>
+              {% endif %}
+            </article>
+
+            <article class="panel panel-images">
+              <div class="panel-heading">
+                <h3>Images</h3>
+                <div class="button-row">
+                  <button type="button" class="button button-secondary" data-action="cache-images">Cache Images</button>
+                  <button type="button" class="button button-secondary" data-action="analyze-images">Analyze Images</button>
+                </div>
+              </div>
+              {% if item.images %}
+                <div class="image-grid">
+                  {% for image in item.images %}
+                    <figure class="image-card">
+                      {% if image.original_preview_url %}
+                        <img src="{{ image.original_preview_url }}" alt="Original image {{ loop.index }} for item {{ item.id }}" loading="lazy" />
+                      {% else %}
+                        <div class="image-placeholder">No image preview</div>
+                      {% endif %}
+                      <figcaption>
+                        <div class="image-card__topline">
+                          <span>Image {{ loop.index }}</span>
+                          {% if image.is_primary_recommended %}
+                            <span class="mini-badge">Recommended primary</span>
+                          {% endif %}
+                        </div>
+                        <p>Status: {{ image.enhancement_status }}</p>
+                        <p>Validation: {{ image.validation_status }}</p>
+                        <p>Chosen variant: {{ image.selected_variant }}</p>
+                        {% if image.is_primary_selected %}
+                          <p><strong>Primary image selected</strong></p>
+                        {% endif %}
+                        {% if image.selected_for_publish %}
+                          <p><strong>Approved for publishing</strong></p>
+                        {% endif %}
+                        {% if image.quality_score is not none %}
+                          <p>Quality score: {{ "%.2f"|format(image.quality_score) }}</p>
+                        {% endif %}
+                        {% if image.processed_preview_url %}
+                          <p><a href="{{ image.processed_preview_url }}" target="_blank" rel="noreferrer">Open processed asset</a></p>
+                        {% endif %}
+                        {% if image.enhanced_preview_url %}
+                          <p><a href="{{ image.enhanced_preview_url }}" target="_blank" rel="noreferrer">Open enhanced asset</a></p>
+                        {% endif %}
+                        {% if image.ai_validation %}
+                          <div class="alert {{ 'alert-info' if image.ai_validation.passed else 'alert-warning' }}">
+                            <strong>Validation {{ 'passed' if image.ai_validation.passed else 'needs review' }}</strong>
+                            {% if image.ai_validation.confidence is not none %}
+                              <p>Confidence: {{ "%.2f"|format(image.ai_validation.confidence) }}</p>
+                            {% endif %}
+                            {% if image.ai_validation.possible_changes %}
+                              <ul>
+                                {% for change in image.ai_validation.possible_changes %}
+                                  <li>{{ change }}</li>
+                                {% endfor %}
+                              </ul>
+                            {% endif %}
+                          </div>
+                        {% endif %}
+                        <div class="image-actions">
+                          <button type="button" class="button button-secondary" data-action="select-primary" data-image-id="{{ image.id }}">Select Primary</button>
+                          <button type="button" class="button" data-action="enhance-image" data-image-id="{{ image.id }}">Enhance Image</button>
+                          <button type="button" class="button button-secondary" data-action="validate-image" data-image-id="{{ image.id }}">Validate Enhanced</button>
+                          <button type="button" class="button button-secondary" data-action="use-original" data-image-id="{{ image.id }}">Use Original</button>
+                          <button type="button" class="button button-secondary" data-action="use-enhanced" data-image-id="{{ image.id }}">Use Enhanced</button>
+                          <button type="button" class="button button-secondary" data-action="approve-image" data-image-id="{{ image.id }}">Approve Image</button>
+                          <button type="button" class="button button-secondary" data-action="reject-image" data-image-id="{{ image.id }}">Reject Image</button>
+                        </div>
+                      </figcaption>
+                    </figure>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <p class="empty-state">No images tracked for this item yet.</p>
+              {% endif %}
+            </article>
+
+            <article class="panel panel-ai">
+              <div class="panel-heading">
+                <h3>AI Review Draft</h3>
+                <div class="button-row">
+                  <button type="button" class="button" data-action="enhance">Enhance with AI</button>
+                  <button type="button" class="button button-success" data-action="approve">Approve</button>
+                </div>
+              </div>
+
+              <div class="draft-form">
+                <label>
+                  <span>AI Title</span>
+                  <input type="text" data-field="title" value="{{ item.ai.draft.title if item.ai and item.ai.draft else '' }}" placeholder="Generate or enter a marketplace-neutral title" />
+                </label>
+
+                <label>
+                  <span>AI Description</span>
+                  <textarea data-field="description" rows="6" placeholder="Generate or enter a marketplace-neutral description">{{ item.ai.draft.description if item.ai and item.ai.draft else '' }}</textarea>
+                </label>
+
+                <label>
+                  <span>Keywords</span>
+                  <input type="text" data-field="keywords" value="{{ item.ai.draft.keywords|join(', ') if item.ai and item.ai.draft else '' }}" placeholder="comma, separated, keywords" />
+                </label>
+
+                <div class="button-row">
+                  <button type="button" class="button button-secondary" data-action="save-draft">Save Draft</button>
+                </div>
+              </div>
+
+              {% if item.ai and item.ai.analysis %}
+                <div class="analysis-grid">
+                  <div>
+                    <h4>Extracted Attributes</h4>
+                    <ul class="token-list">
+                      {% if item.ai.analysis.brand %}<li>Brand: {{ item.ai.analysis.brand }}</li>{% endif %}
+                      {% if item.ai.analysis.item_type %}<li>Type: {{ item.ai.analysis.item_type }}</li>{% endif %}
+                      {% if item.ai.analysis.category %}<li>Category: {{ item.ai.analysis.category }}</li>{% endif %}
+                      {% if item.ai.analysis.primary_color %}<li>Primary color: {{ item.ai.analysis.primary_color }}</li>{% endif %}
+                      {% if item.ai.analysis.pattern %}<li>Pattern: {{ item.ai.analysis.pattern }}</li>{% endif %}
+                      {% if item.ai.analysis.material %}<li>Material: {{ item.ai.analysis.material }}</li>{% endif %}
+                      {% if item.ai.analysis.neckline %}<li>Neckline: {{ item.ai.analysis.neckline }}</li>{% endif %}
+                      {% if item.ai.analysis.sleeve_type %}<li>Sleeve: {{ item.ai.analysis.sleeve_type }}</li>{% endif %}
+                      {% if item.ai.analysis.fit %}<li>Fit: {{ item.ai.analysis.fit }}</li>{% endif %}
+                      {% if item.ai.analysis.style %}<li>Style: {{ item.ai.analysis.style|join(', ') }}</li>{% endif %}
+                      {% if item.ai.analysis.visible_defects %}<li>Visible defects: {{ item.ai.analysis.visible_defects|join(', ') }}</li>{% endif %}
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4>Warnings and Unknowns</h4>
+                    {% if item.ai.analysis.warnings %}
+                      <div class="alert alert-warning">
+                        <ul>
+                          {% for warning in item.ai.analysis.warnings %}
+                            <li>{{ warning }}</li>
+                          {% endfor %}
+                        </ul>
+                      </div>
+                    {% else %}
+                      <p class="muted">No analysis warnings.</p>
+                    {% endif %}
+
+                    {% if item.ai.analysis.unknown_fields %}
+                      <p><strong>Unknown fields:</strong> {{ item.ai.analysis.unknown_fields|join(', ') }}</p>
+                    {% endif %}
+
+                    {% if item.ai.validation and item.ai.validation.issues %}
+                      <div class="alert alert-info">
+                        <strong>Validation</strong>
+                        <ul>
+                          {% for issue in item.ai.validation.issues %}
+                            <li>{{ issue.code }}: {{ issue.message }}</li>
+                          {% endfor %}
+                        </ul>
+                      </div>
+                    {% endif %}
+                  </div>
+                </div>
+              {% else %}
+                <p class="empty-state">No AI analysis yet. Cache/analyze images, then enhance the listing.</p>
+              {% endif %}
+            </article>
+          </div>
+
+          <div class="item-feedback" data-feedback></div>
+        </section>
       {% endfor %}
     {% else %}
-      <p>No items found.</p>
+      <p class="empty-state">No items found.</p>
     {% endif %}
 
-    <p><a href="/">Back</a></p>
+    <script src="/static/items.js"></script>
   </body>
 </html>

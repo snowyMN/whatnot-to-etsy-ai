@@ -1,0 +1,8 @@
+Create a clean ecommerce product photograph.
+
+Preserve the product exactly as shown in the source image.
+Do not change product color, logos, labels, patterns, stitching, shape, texture, visible wear, stains, scratches, holes, damage, or missing parts.
+Do not beautify, repair, or improve the condition of the merchandise.
+Only improve the surrounding presentation.
+Use a simple neutral ecommerce background and natural-looking lighting.
+Keep the item centered and fully visible.
