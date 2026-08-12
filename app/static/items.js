@@ -43,6 +43,31 @@ function getDraftPayload(root) {
   return { title, description, keywords };
 }
 
+function splitList(value) {
+  return (value || '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function getMarketingStrategyPayload(root) {
+  return {
+    target_customer: root.querySelector('[data-strategy-field="target_customer"]')?.value?.trim() || null,
+    buyer_intent: splitList(root.querySelector('[data-strategy-field="buyer_intent"]')?.value),
+    positioning_angle: root.querySelector('[data-strategy-field="positioning_angle"]')?.value?.trim() || null,
+    primary_value_proposition: root.querySelector('[data-strategy-field="primary_value_proposition"]')?.value?.trim() || null,
+    selling_points: splitList(root.querySelector('[data-strategy-field="selling_points"]')?.value),
+    search_keywords: splitList(root.querySelector('[data-strategy-field="search_keywords"]')?.value),
+    long_tail_keywords: splitList(root.querySelector('[data-strategy-field="long_tail_keywords"]')?.value),
+    style_keywords: splitList(root.querySelector('[data-strategy-field="style_keywords"]')?.value),
+    merchandising_notes: splitList(root.querySelector('[data-strategy-field="merchandising_notes"]')?.value),
+    recommended_primary_image_type: root.querySelector('[data-strategy-field="recommended_primary_image_type"]')?.value?.trim() || null,
+    social_media_angles: splitList(root.querySelector('[data-strategy-field="social_media_angles"]')?.value),
+    marketplace_notes: splitList(root.querySelector('[data-strategy-field="marketplace_notes"]')?.value),
+    warnings: splitList(root.querySelector('[data-strategy-field="warnings"]')?.value),
+  };
+}
+
 async function handleAction(button) {
   const root = button.closest('[data-item-id]');
   if (!root) {
@@ -76,6 +101,35 @@ async function handleAction(button) {
         body: JSON.stringify({ max_images: 4, force_regenerate: false }),
       });
       setFeedback(button, `Enhancement finished with status ${result.status}.`);
+      window.location.reload();
+      return;
+    }
+
+    if (action === 'regenerate-strategy') {
+      await requestJson(`/items/${itemId}/marketing-strategy/regenerate`, {
+        method: 'POST',
+      });
+      setFeedback(button, 'Marketing strategy regenerated.');
+      window.location.reload();
+      return;
+    }
+
+    if (action === 'regenerate-listing') {
+      await requestJson(`/items/${itemId}/listing/regenerate`, {
+        method: 'POST',
+      });
+      setFeedback(button, 'Listing draft regenerated.');
+      window.location.reload();
+      return;
+    }
+
+    if (action === 'save-strategy') {
+      const payload = getMarketingStrategyPayload(root);
+      await requestJson(`/items/${itemId}/marketing-strategy`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      });
+      setFeedback(button, 'Marketing strategy saved.');
       window.location.reload();
       return;
     }

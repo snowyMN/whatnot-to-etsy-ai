@@ -263,6 +263,10 @@ a {
 	gap: 0.9rem;
 }
 
+.draft-form-compact {
+	margin-top: 0.25rem;
+}
+
 .draft-form label {
 	display: grid;
 	gap: 0.35rem;
@@ -283,9 +287,38 @@ a {
 	font: inherit;
 }
 
+.workflow-block {
+	margin-bottom: 1rem;
+	padding: 0.9rem 1rem;
+	border-radius: 18px;
+	background: rgba(237, 246, 245, 0.65);
+	border: 1px solid rgba(79, 143, 133, 0.25);
+}
+
+.workflow-block h4 {
+	margin-bottom: 0.65rem;
+}
+
+.workflow-list {
+	margin: 0;
+	padding-left: 1.2rem;
+	display: grid;
+	gap: 0.45rem;
+}
+
+.workflow-list li {
+	display: grid;
+	gap: 0.15rem;
+}
+
+.workflow-list span {
+	color: var(--muted);
+	font-size: 0.9rem;
+}
+
 .analysis-grid {
 	display: grid;
-	grid-template-columns: 1fr 1fr;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 1rem;
 	margin-top: 1rem;
 }
@@ -314,6 +347,10 @@ a {
 .alert-info {
 	background: var(--info-bg);
 	border-color: var(--info-border);
+}
+
+.validation-detail-list {
+	margin-top: 0.85rem;
 }
 
 .item-feedback {

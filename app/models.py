@@ -79,8 +79,37 @@ class ItemAIRecord(Base):
     generated_by_model = Column(String, nullable=True)
     generated_at = Column(DateTime, nullable=True)
     image_input_summary = Column(Text, nullable=True)
+    marketing_strategy_json = Column(Text, nullable=True)
+    marketplace_draft_json = Column(Text, nullable=True)
+    listing_validation_json = Column(Text, nullable=True)
+    workflow_steps_json = Column(Text, nullable=True)
 
     item = relationship("ImportedItem", back_populates="ai_record")
+
+
+class AIExecution(Base):
+    __tablename__ = "ai_executions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    item_id = Column(
+        Integer,
+        ForeignKey("imported_items.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    task_type = Column(String, nullable=False)
+    model_name = Column(String, nullable=True)
+    prompt_name = Column(String, nullable=True)
+    prompt_version = Column(String, nullable=True)
+    started_at = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+    duration_ms = Column(Integer, nullable=True)
+    success = Column(Boolean, nullable=False, default=True)
+    error = Column(Text, nullable=True)
+    input_summary = Column(Text, nullable=True)
+    output_json = Column(Text, nullable=True)
+
+    item = relationship("ImportedItem")
 
 
 class ListingImage(Base):

@@ -1,6 +1,29 @@
 # Whatnot to Etsy AI Listing Generator
 
-This project currently focuses on one workflow: importing Whatnot listings and saving them locally so they are ready for future editing/enhancement and marketplace publishing.
+This project is a local-first AI workflow for resale and ecommerce listing preparation. It imports Whatnot listings, analyzes product facts with a local multimodal model, creates a separate marketing strategy, generates a marketplace-neutral listing draft, validates the output, and keeps a human reviewer as the final approval gate.
+
+## AI Workflow
+
+```mermaid
+flowchart LR
+   A[Whatnot Import] --> B[Product Analysis Agent]
+   B --> C[Verified Product Facts]
+   C --> D[Marketing Strategy Agent]
+   D --> E[Marketplace-Neutral Listing Writer]
+   E --> F[Listing Validator]
+   F --> G[Human Review UI]
+   G --> H[Future Marketplace Adapters]
+```
+
+## Current Architecture Highlights
+
+- Local LLM integration through LM Studio using OpenAI-compatible APIs.
+- Multimodal product analysis with listing text plus cached images.
+- Separate AI responsibilities for product facts, marketing positioning, writing, and validation.
+- Structured outputs enforced with Pydantic models.
+- Prompt files with explicit prompt versions.
+- AI execution logging for observability and debugging.
+- Human-in-the-loop review with editable strategy and draft fields.
 
 ## Current Features
 
@@ -17,12 +40,27 @@ This project currently focuses on one workflow: importing Whatnot listings and s
 - Update existing rows when a listing already exists (deduped by source URL).
 - Show saved items in the FastAPI/Jinja UI.
 - Add manual review notes when title/description garment signals conflict.
+- Run a local AI workflow with:
+   - Product Analysis Agent
+   - Marketing Strategy Agent
+   - Marketplace-neutral Listing Writer
+   - Listing Validator
+- Review AI workflow metadata including model and prompt version on the item page.
+- Regenerate marketing strategy and listing draft independently.
+- Log AI executions per step for observability.
+
+## Local AI Models
+
+- `Qwen2.5-VL-7B-Instruct` via LM Studio for product analysis, strategy generation, draft generation, and validation.
+- `FLUX.2 klein 4B` via ComfyUI for optional image enhancement workflows.
+
+Each AI task is configurable independently with environment variables, so the architecture can demonstrate model abstraction without requiring multiple models to be loaded at once.
 
 ## Planned Features
 
-- LLM step to clean up and enhance listing copy.
-- Upload flow for Etsy.
-- Upload flow for additional listing platforms.
+- Deterministic marketplace adapters for Etsy, eBay, Poshmark, and Mercari.
+- Stronger validation and evaluation fixtures.
+- Portfolio-focused screenshots and architecture notes.
 
 ## Not Yet Implemented
 
@@ -31,6 +69,7 @@ The following are intentionally not implemented in this release:
 - Etsy OAuth and API publishing.
 - Automatic upload to Etsy or any marketplace.
 - Multi-platform publishing orchestration.
+- Live marketplace research tools or autonomous tool-using agents.
 - Production queue/worker architecture for long-running imports.
 - Automated end-to-end scraper test suite.
 
@@ -122,7 +161,11 @@ uvicorn app.main:app --reload
 
 - Paste a Whatnot storefront URL.
 - Click Import Listings.
-- Open /items to confirm rows are saved.
+- Open `/items`.
+- Cache/analyze images if needed.
+- Click `Enhance with AI` to run the full workflow.
+- Use `Regenerate Strategy` or `Regenerate Listing` to revise individual stages.
+- Edit strategy, title, description, and keywords before approval.
 
 ## Manual Validation Script
 
@@ -131,6 +174,19 @@ A manual Selenium smoke script is included at:
 - scripts/manual_selenium_check.py
 
 This is a manual debugging helper, not an automated test suite.
+
+## Review UI
+
+The review page is designed to make the AI architecture visible:
+
+- Original listing data
+- Product Analysis output
+- Marketing Strategy output
+- Listing draft
+- Validation results
+- Workflow step metadata with prompt versions and model names
+
+This is intentional. The project is meant to be portfolio-quality and understandable to another engineer inspecting the system.
 
 ## Troubleshooting
 
@@ -154,4 +210,4 @@ You can override this in .env with DATABASE_URL. Example:
 
 ## Project Status
 
-Early-stage public release focused on reliable import/save behavior for Windows users.
+Early-stage but production-minded local AI portfolio project focused on reliable import, review, structured AI workflows, and manual approval.

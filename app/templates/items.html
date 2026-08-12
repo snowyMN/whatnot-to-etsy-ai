@@ -131,9 +131,27 @@
                 <h3>AI Review Draft</h3>
                 <div class="button-row">
                   <button type="button" class="button" data-action="enhance">Enhance with AI</button>
+                  <button type="button" class="button button-secondary" data-action="regenerate-strategy">Regenerate Strategy</button>
+                  <button type="button" class="button button-secondary" data-action="regenerate-listing">Regenerate Listing</button>
                   <button type="button" class="button button-success" data-action="approve">Approve</button>
                 </div>
               </div>
+
+              {% if item.ai and item.ai.workflow_steps %}
+                <section class="workflow-block">
+                  <h4>AI Workflow</h4>
+                  <ol class="workflow-list">
+                    {% for step in item.ai.workflow_steps %}
+                      <li>
+                        <strong>{{ step.task_type.replace('_', ' ') }}</strong>
+                        {% if step.model_name %}<span>Model: {{ step.model_name }}</span>{% endif %}
+                        {% if step.prompt_name and step.prompt_version %}<span>Prompt: {{ step.prompt_name }} v{{ step.prompt_version }}</span>{% endif %}
+                        {% if step.duration_ms is not none %}<span>Duration: {{ step.duration_ms }} ms</span>{% endif %}
+                      </li>
+                    {% endfor %}
+                  </ol>
+                </section>
+              {% endif %}
 
               <div class="draft-form">
                 <label>
@@ -159,7 +177,7 @@
               {% if item.ai and item.ai.analysis %}
                 <div class="analysis-grid">
                   <div>
-                    <h4>Extracted Attributes</h4>
+                    <h4>Product Analysis</h4>
                     <ul class="token-list">
                       {% if item.ai.analysis.brand %}<li>Brand: {{ item.ai.analysis.brand }}</li>{% endif %}
                       {% if item.ai.analysis.item_type %}<li>Type: {{ item.ai.analysis.item_type }}</li>{% endif %}
@@ -173,6 +191,71 @@
                       {% if item.ai.analysis.style %}<li>Style: {{ item.ai.analysis.style|join(', ') }}</li>{% endif %}
                       {% if item.ai.analysis.visible_defects %}<li>Visible defects: {{ item.ai.analysis.visible_defects|join(', ') }}</li>{% endif %}
                     </ul>
+                  </div>
+
+                  <div>
+                    <h4>Marketing Strategy</h4>
+                    {% if item.ai.marketing_strategy %}
+                      <div class="draft-form draft-form-compact">
+                        <label>
+                          <span>Target Buyer</span>
+                          <input type="text" data-strategy-field="target_customer" value="{{ item.ai.marketing_strategy.target_customer or '' }}" />
+                        </label>
+                        <label>
+                          <span>Buyer Intent</span>
+                          <input type="text" data-strategy-field="buyer_intent" value="{{ item.ai.marketing_strategy.buyer_intent|join(', ') }}" />
+                        </label>
+                        <label>
+                          <span>Positioning</span>
+                          <input type="text" data-strategy-field="positioning_angle" value="{{ item.ai.marketing_strategy.positioning_angle or '' }}" />
+                        </label>
+                        <label>
+                          <span>Primary Value Proposition</span>
+                          <input type="text" data-strategy-field="primary_value_proposition" value="{{ item.ai.marketing_strategy.primary_value_proposition or '' }}" />
+                        </label>
+                        <label>
+                          <span>Selling Points</span>
+                          <input type="text" data-strategy-field="selling_points" value="{{ item.ai.marketing_strategy.selling_points|join(', ') }}" />
+                        </label>
+                        <label>
+                          <span>Search Keywords</span>
+                          <input type="text" data-strategy-field="search_keywords" value="{{ item.ai.marketing_strategy.search_keywords|join(', ') }}" />
+                        </label>
+                        <label>
+                          <span>Long-tail Keywords</span>
+                          <input type="text" data-strategy-field="long_tail_keywords" value="{{ item.ai.marketing_strategy.long_tail_keywords|join(', ') }}" />
+                        </label>
+                        <label>
+                          <span>Style Keywords</span>
+                          <input type="text" data-strategy-field="style_keywords" value="{{ item.ai.marketing_strategy.style_keywords|join(', ') }}" />
+                        </label>
+                        <label>
+                          <span>Merchandising Notes</span>
+                          <input type="text" data-strategy-field="merchandising_notes" value="{{ item.ai.marketing_strategy.merchandising_notes|join(', ') }}" />
+                        </label>
+                        <label>
+                          <span>Recommended Primary Image Type</span>
+                          <input type="text" data-strategy-field="recommended_primary_image_type" value="{{ item.ai.marketing_strategy.recommended_primary_image_type or '' }}" />
+                        </label>
+                        <label>
+                          <span>Social Media Angles</span>
+                          <input type="text" data-strategy-field="social_media_angles" value="{{ item.ai.marketing_strategy.social_media_angles|join(', ') }}" />
+                        </label>
+                        <label>
+                          <span>Marketplace Notes</span>
+                          <input type="text" data-strategy-field="marketplace_notes" value="{{ item.ai.marketing_strategy.marketplace_notes|join(', ') }}" />
+                        </label>
+                        <label>
+                          <span>Warnings</span>
+                          <input type="text" data-strategy-field="warnings" value="{{ item.ai.marketing_strategy.warnings|join(', ') }}" />
+                        </label>
+                        <div class="button-row">
+                          <button type="button" class="button button-secondary" data-action="save-strategy">Save Strategy</button>
+                        </div>
+                      </div>
+                    {% else %}
+                      <p class="muted">No marketing strategy generated yet.</p>
+                    {% endif %}
                   </div>
 
                   <div>
@@ -192,13 +275,54 @@
                     {% if item.ai.analysis.unknown_fields %}
                       <p><strong>Unknown fields:</strong> {{ item.ai.analysis.unknown_fields|join(', ') }}</p>
                     {% endif %}
+                  </div>
 
+                  <div>
+                    <h4>Validation Results</h4>
                     {% if item.ai.validation and item.ai.validation.issues %}
-                      <div class="alert alert-info">
+                      <div class="alert {{ 'alert-warning' if item.ai.validation.requires_review else 'alert-info' }}">
                         <strong>Validation</strong>
                         <ul>
                           {% for issue in item.ai.validation.issues %}
                             <li>{{ issue.code }}: {{ issue.message }}</li>
+                          {% endfor %}
+                        </ul>
+                      </div>
+                    {% elif item.ai.validation %}
+                      <div class="alert alert-info">
+                        <strong>Validation passed</strong>
+                        <p>No blocking issues detected.</p>
+                      </div>
+                    {% endif %}
+
+                    {% if item.ai.validation_detail and item.ai.validation_detail.warnings %}
+                      <div class="alert alert-warning validation-detail-list">
+                        <strong>Warnings</strong>
+                        <ul>
+                          {% for warning in item.ai.validation_detail.warnings %}
+                            <li>{{ warning }}</li>
+                          {% endfor %}
+                        </ul>
+                      </div>
+                    {% endif %}
+
+                    {% if item.ai.validation_detail and item.ai.validation_detail.recommended_changes %}
+                      <div class="alert alert-info validation-detail-list">
+                        <strong>Recommended changes</strong>
+                        <ul>
+                          {% for change in item.ai.validation_detail.recommended_changes %}
+                            <li>{{ change }}</li>
+                          {% endfor %}
+                        </ul>
+                      </div>
+                    {% endif %}
+
+                    {% if item.ai.validation_detail and item.ai.validation_detail.unsupported_claims %}
+                      <div class="alert alert-warning validation-detail-list">
+                        <strong>Unsupported claims</strong>
+                        <ul>
+                          {% for claim in item.ai.validation_detail.unsupported_claims %}
+                            <li>{{ claim }}</li>
                           {% endfor %}
                         </ul>
                       </div>

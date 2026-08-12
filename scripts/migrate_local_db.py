@@ -60,7 +60,23 @@ def _ensure_imported_items_columns(engine) -> None:
 def _ensure_item_ai_records_table(engine) -> None:
     inspector = inspect(engine)
     if "item_ai_records" in inspector.get_table_names():
-        print("item_ai_records already exists.")
+        alter_statements: list[str] = []
+        if not _column_exists(inspector, "item_ai_records", "marketing_strategy_json"):
+            alter_statements.append("ALTER TABLE item_ai_records ADD COLUMN marketing_strategy_json TEXT")
+        if not _column_exists(inspector, "item_ai_records", "marketplace_draft_json"):
+            alter_statements.append("ALTER TABLE item_ai_records ADD COLUMN marketplace_draft_json TEXT")
+        if not _column_exists(inspector, "item_ai_records", "listing_validation_json"):
+            alter_statements.append("ALTER TABLE item_ai_records ADD COLUMN listing_validation_json TEXT")
+        if not _column_exists(inspector, "item_ai_records", "workflow_steps_json"):
+            alter_statements.append("ALTER TABLE item_ai_records ADD COLUMN workflow_steps_json TEXT")
+
+        if alter_statements:
+            with engine.begin() as conn:
+                for sql in alter_statements:
+                    conn.execute(text(sql))
+            print(f"Applied {len(alter_statements)} item_ai_records ALTER statement(s).")
+        else:
+            print("item_ai_records already exists.")
         return
 
     create_table_sql = """
@@ -92,6 +108,10 @@ def _ensure_item_ai_records_table(engine) -> None:
         generated_by_model VARCHAR,
         generated_at DATETIME,
         image_input_summary TEXT,
+        marketing_strategy_json TEXT,
+        marketplace_draft_json TEXT,
+        listing_validation_json TEXT,
+        workflow_steps_json TEXT,
         FOREIGN KEY(item_id) REFERENCES imported_items(id) ON DELETE CASCADE
     )
     """
@@ -102,6 +122,39 @@ def _ensure_item_ai_records_table(engine) -> None:
         conn.execute(text("CREATE UNIQUE INDEX ix_item_ai_records_item_id ON item_ai_records (item_id)"))
 
     print("Created item_ai_records table and indexes.")
+
+
+def _ensure_ai_executions_table(engine) -> None:
+    inspector = inspect(engine)
+    if "ai_executions" in inspector.get_table_names():
+        print("ai_executions already exists.")
+        return
+
+    create_table_sql = """
+    CREATE TABLE ai_executions (
+        id INTEGER PRIMARY KEY,
+        item_id INTEGER NOT NULL,
+        task_type VARCHAR NOT NULL,
+        model_name VARCHAR,
+        prompt_name VARCHAR,
+        prompt_version VARCHAR,
+        started_at DATETIME,
+        completed_at DATETIME,
+        duration_ms INTEGER,
+        success BOOLEAN NOT NULL DEFAULT 1,
+        error TEXT,
+        input_summary TEXT,
+        output_json TEXT,
+        FOREIGN KEY(item_id) REFERENCES imported_items(id) ON DELETE CASCADE
+    )
+    """
+
+    with engine.begin() as conn:
+        conn.execute(text(create_table_sql))
+        conn.execute(text("CREATE INDEX ix_ai_executions_id ON ai_executions (id)"))
+        conn.execute(text("CREATE INDEX ix_ai_executions_item_id ON ai_executions (item_id)"))
+
+    print("Created ai_executions table and indexes.")
 
 
 def _ensure_listing_images_table(engine) -> None:
@@ -241,6 +294,7 @@ def main() -> None:
 
     _ensure_imported_items_columns(engine)
     _ensure_item_ai_records_table(engine)
+    _ensure_ai_executions_table(engine)
     _ensure_listing_images_table(engine)
     _backfill_listing_images_from_urls(engine)
     print("Local DB migration complete.")

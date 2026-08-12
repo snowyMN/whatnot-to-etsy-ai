@@ -49,6 +49,36 @@ class ProductAnalysis(BaseModel):
     confidence: ConfidenceResult = Field(default_factory=ConfidenceResult)
 
 
+class MarketingStrategy(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    target_customer: str | None = None
+    buyer_intent: list[str] = Field(default_factory=list)
+    positioning_angle: str | None = None
+    primary_value_proposition: str | None = None
+    selling_points: list[str] = Field(default_factory=list)
+    search_keywords: list[str] = Field(default_factory=list)
+    long_tail_keywords: list[str] = Field(default_factory=list)
+    style_keywords: list[str] = Field(default_factory=list)
+    merchandising_notes: list[str] = Field(default_factory=list)
+    recommended_primary_image_type: str | None = None
+    social_media_angles: list[str] = Field(default_factory=list)
+    marketplace_notes: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+
+
+class WorkflowStepMetadata(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    task_type: str
+    model_name: str | None = None
+    prompt_name: str | None = None
+    prompt_version: str | None = None
+    success: bool = True
+    duration_ms: int | None = Field(default=None, ge=0)
+    error: str | None = None
+
+
 class ListingDraft(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
@@ -56,6 +86,17 @@ class ListingDraft(BaseModel):
     description: str = Field(min_length=1)
     keywords: list[str] = Field(default_factory=list)
     rationale: str | None = None
+
+
+class MarketplaceNeutralListingDraft(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    title: str = Field(min_length=1, max_length=220)
+    description: str = Field(min_length=1)
+    feature_bullets: list[str] = Field(default_factory=list)
+    keywords: list[str] = Field(default_factory=list)
+    condition_statement: str | None = None
+    buyer_notes: list[str] = Field(default_factory=list)
 
 
 class ValidationIssue(BaseModel):
@@ -80,6 +121,34 @@ class ValidationResult(BaseModel):
     is_valid: bool
     requires_review: bool = True
     issues: list[ValidationIssue] = Field(default_factory=list)
+
+
+class ListingValidationResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    passed: bool
+    issues: list[ValidationIssue] = Field(default_factory=list)
+    unsupported_claims: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    recommended_changes: list[str] = Field(default_factory=list)
+
+
+class SaveMarketingStrategyRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    target_customer: str | None = None
+    buyer_intent: list[str] = Field(default_factory=list)
+    positioning_angle: str | None = None
+    primary_value_proposition: str | None = None
+    selling_points: list[str] = Field(default_factory=list)
+    search_keywords: list[str] = Field(default_factory=list)
+    long_tail_keywords: list[str] = Field(default_factory=list)
+    style_keywords: list[str] = Field(default_factory=list)
+    merchandising_notes: list[str] = Field(default_factory=list)
+    recommended_primary_image_type: str | None = None
+    social_media_angles: list[str] = Field(default_factory=list)
+    marketplace_notes: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
 
 
 class ImageQualityAnalysis(BaseModel):
@@ -169,8 +238,11 @@ class ItemAIView(BaseModel):
     item_id: int
     listing_status: str
     analysis: ProductAnalysis | None = None
+    marketing_strategy: MarketingStrategy | None = None
     draft: ListingDraft | None = None
     validation: ValidationResult | None = None
+    validation_detail: ListingValidationResult | None = None
+    workflow_steps: list[WorkflowStepMetadata] = Field(default_factory=list)
 
 
 class ListingEnhancementResult(BaseModel):

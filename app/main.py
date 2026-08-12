@@ -21,9 +21,13 @@ from app.schemas_ai import (
     ListingDraft,
     ListingEnhancementResult,
     ListingImageView,
+    ListingValidationResult,
+    MarketingStrategy,
     ProductAnalysis,
+    SaveMarketingStrategyRequest,
     SaveDraftRequest,
     ValidationResult,
+    WorkflowStepMetadata,
 )
 from app.services.image_analysis import analyze_listing_images
 from app.services.image_enhancement import ImageEnhancementService
@@ -79,6 +83,10 @@ def _build_item_ai_view(item: ImportedItem) -> ItemAIView | None:
         return None
 
     warning_payload = _warning_payload(cast(str | None, record.ai_warnings))
+    marketing_strategy_payload = _parse_json_text(cast(str | None, record.marketing_strategy_json))
+    listing_validation_payload = _parse_json_text(cast(str | None, record.listing_validation_json))
+    workflow_steps_payload = _parse_json_text(cast(str | None, record.workflow_steps_json))
+    marketplace_draft_payload = _parse_json_text(cast(str | None, record.marketplace_draft_json))
 
     analysis_payload = {
         "brand": cast(str | None, record.ai_brand),
@@ -118,12 +126,43 @@ def _build_item_ai_view(item: ImportedItem) -> ItemAIView | None:
         "issues": warning_payload.get("validation_issues") or [],
     }
 
+    if isinstance(marketplace_draft_payload, dict):
+        draft_payload = {
+            "title": marketplace_draft_payload.get("title") or draft_payload["title"],
+            "description": marketplace_draft_payload.get("description") or draft_payload["description"],
+            "keywords": marketplace_draft_payload.get("keywords") or draft_payload["keywords"],
+            "rationale": marketplace_draft_payload.get("condition_statement"),
+        }
+
+    if isinstance(listing_validation_payload, dict):
+        listing_validation = ListingValidationResult.model_validate(listing_validation_payload)
+        validation_payload = {
+            "is_valid": listing_validation.passed,
+            "requires_review": (not listing_validation.passed) or bool(listing_validation.issues or listing_validation.warnings),
+            "issues": listing_validation.issues,
+        }
+
     return ItemAIView(
         item_id=cast(int, item.id),
         listing_status=cast(str, item.listing_status),
         analysis=ProductAnalysis.model_validate(analysis_payload),
-        draft=ListingDraft.model_validate(draft_payload) if cast(str | None, record.ai_title) and cast(str | None, record.ai_description) else None,
+        marketing_strategy=(
+            MarketingStrategy.model_validate(marketing_strategy_payload)
+            if isinstance(marketing_strategy_payload, dict)
+            else None
+        ),
+        draft=ListingDraft.model_validate(draft_payload) if draft_payload["title"] and draft_payload["description"] else None,
         validation=ValidationResult.model_validate(validation_payload),
+        validation_detail=(
+            ListingValidationResult.model_validate(listing_validation_payload)
+            if isinstance(listing_validation_payload, dict)
+            else None
+        ),
+        workflow_steps=[
+            WorkflowStepMetadata.model_validate(step)
+            for step in workflow_steps_payload
+            if isinstance(step, dict)
+        ] if isinstance(workflow_steps_payload, list) else [],
     )
 
 
@@ -338,6 +377,69 @@ def enhance_item_listing(
         requires_review=summary.requires_review,
         recommended_primary_image_id=summary.recommended_primary_image_id,
     )
+
+
+@app.post("/items/{item_id}/marketing-strategy/regenerate", response_model=ItemDetailView)
+def regenerate_marketing_strategy(
+    item_id: int,
+    db: Session = Depends(get_db),
+) -> ItemDetailView:
+    item = db.query(ImportedItem).filter(ImportedItem.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    try:
+        LocalListingAIService().regenerate_marketing_strategy(db, item)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"Marketing strategy regeneration failed: {exc}") from exc
+
+    db.refresh(item)
+    return _build_item_detail_view(item)
+
+
+@app.post("/items/{item_id}/listing/regenerate", response_model=ItemDetailView)
+def regenerate_listing_draft(
+    item_id: int,
+    db: Session = Depends(get_db),
+) -> ItemDetailView:
+    item = db.query(ImportedItem).filter(ImportedItem.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    try:
+        LocalListingAIService().regenerate_listing_draft(db, item)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"Listing draft regeneration failed: {exc}") from exc
+
+    db.refresh(item)
+    return _build_item_detail_view(item)
+
+
+@app.put("/items/{item_id}/marketing-strategy", response_model=ItemDetailView)
+def save_marketing_strategy(
+    item_id: int,
+    payload: SaveMarketingStrategyRequest,
+    db: Session = Depends(get_db),
+) -> ItemDetailView:
+    item = db.query(ImportedItem).filter(ImportedItem.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    try:
+        LocalListingAIService().save_marketing_strategy(
+            db,
+            item,
+            MarketingStrategy.model_validate(payload.model_dump()),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    db.refresh(item)
+    return _build_item_detail_view(item)
 
 
 @app.put("/items/{item_id}/draft", response_model=ItemDetailView)

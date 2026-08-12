@@ -1,0 +1,73 @@
+WHATNOT-TO-ETSY-AI TESTING INSTRUCTIONS
+
+1) Run automated tests first
+
+PowerShell:
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+
+Expected result:
+- All tests pass, including:
+  - test_image_enhancement
+  - test_image_review
+  - test_listing_ai_workflow
+  - test_routes
+
+2) Start the app
+
+PowerShell:
+uvicorn app.main:app --reload
+
+Open in browser:
+- http://127.0.0.1:8000
+- http://127.0.0.1:8000/items
+
+3) If your local DB is from an older version, run migration once
+
+PowerShell:
+.\.venv\Scripts\python.exe scripts\migrate_local_db.py
+
+This updates local schema for image and AI workflow tables.
+
+4) Manual UI flow test (core workflow)
+
+A. Import data
+- Go to / and paste a Whatnot storefront URL.
+- Click Import Listings.
+- Go to /items.
+
+B. Test image workflow on one item
+- Click Cache Images.
+- Click Analyze Images.
+- Click Enhance Image on one image.
+- Click Validate Enhanced.
+- Try Select Primary.
+- Try Use Original / Use Enhanced.
+- Try Approve Image.
+
+C. Test listing AI workflow
+- Click Enhance with AI.
+- Confirm Product Analysis, Marketing Strategy, Listing Draft, Validation Results, and AI Workflow metadata appear.
+- Click Regenerate Strategy and confirm the strategy panel updates.
+- Click Regenerate Listing and confirm the title/description/keywords update.
+- Edit strategy fields and click Save Strategy.
+- Edit title/description/keywords.
+- Click Save Draft.
+- Click Approve.
+
+If these complete without 4xx/5xx errors, the main flow is healthy.
+
+5) Optional script-based checks
+
+PowerShell:
+.\.venv\Scripts\python.exe scripts\manual_image_analysis_check.py
+.\.venv\Scripts\python.exe scripts\manual_selenium_check.py
+
+6) Dependency-specific notes
+
+- Listing import requires Chrome + ChromeDriver.
+- AI listing/image analysis requires LM Studio running with configured model.
+- ComfyUI enhancement path requires ComfyUI running.
+- You can still test deterministic enhancement by using force_provider="deterministic" on image enhancement.
